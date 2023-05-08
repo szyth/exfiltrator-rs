@@ -16,9 +16,18 @@ async fn exfiltrate(req: HttpRequest, mut payload: web::Payload) -> impl Respond
     };
 
     let mut body = BytesMut::new();
-    while let Some(item) = payload.next().await {
-        let chunk = item.unwrap();
-        body.extend_from_slice(&chunk);
+    loop {
+        match payload.next().await {
+            Some(Ok(chunk)) => {
+                body.extend_from_slice(&chunk);
+            }
+            Some(Err(err)) => {
+                panic!("exited with {}", err)
+            }
+            None => {
+                break;
+            }
+        }
     }
 
     // Save file to disk
